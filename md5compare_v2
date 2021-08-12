@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+
+############################################################
+# Help                                                     #
+############################################################
+Help()
+{
+   # Display Help
+   echo ""
+   echo "This script compares the MD5 hash of a file against another file, or a user inputted checksum"
+   echo "It is made to be used on Windows files in WSL or with GitBash"
+   echo
+   echo "Syntax: ./md5compare [-g|h|v|V]"
+   echo "options:"
+   echo "-g     Print the GPL license notification."
+   echo "-h     Print this Help."
+   echo "-f     To compare the MD5 of one file against another"
+   echo "       USAGE: -f 'path/to/file/'"
+   echo "       NOTE: Filepath must be in quotations"
+   echo "-c     Compare against a user inputted checksum"
+   echo "       USAGE: -c 'path/to/file/'"
+   echo "       NOTE: Filepath must be in quotations"
+}
+
+compare_files ()
+{
+#Compare the md5 checksums of 2 files
+wsl_path=$(wslpath -a $file1_path)
+checksum_1=$(md5sum $wsl_path | cut -c1-32)
+
+wsl2_path=$(wslpath -a $file2_path)
+checksum_2=$(md5sum $wsl2_path | cut -c1-32)
+if [ "$checksum_1" = "$checksum_2" ]; then
+    echo "Checksums match, yay!"
+else
+    echo "Checksums don't match, boo!" 
+fi
+
+#    wsl_path=$(wslpath -a $file1_path)
+#    checksum_1=$(md5sum $wsl_path | cut -c1-32)
+
+#    wsl2_path=$(wslpath -a $file2_path)
+#    checksum_2=$(md5sum $wsl2_path | cut -c1-32)
+
+#    if [ "$checksum_1" = "$checksum_2" ]; then
+#        echo "Checksums match, yay!"
+#    else
+#        echo "Checksums don't match, boo!" 
+#    fi
+}
+
+############################################################
+# Main program                                             #
+############################################################
+
+#Get the options
+while getopts ":hf:c:" option; do
+    case $option in
+        h) # display Help
+            Help
+            exit;;
+        f) # Enter a File Path for $file1_path
+            file1_path=$OPTARG
+            wsl_path=$(wslpath -a $file1_path)
+            checksum_1=$(md5sum $wsl_path | cut -c1-32)
+
+            echo "Enter Path to the file you want to compare to: "
+            read -r file2_path
+            wsl2_path=$(wslpath -a $file2_path)
+            #echo "MD5 Checksum of file 2 is "$(md5sum $wsl2_path) | cut -c1-58
+            checksum_2=$(md5sum $wsl2_path | cut -c1-32)
+
+            echo "Checksum 1 is $checksum_1"
+            echo "Checksum 2 is $checksum_2"
+            if [ "$checksum_1" = "$checksum_2" ]; then
+                echo ""
+                echo "------------------------------"
+                echo "$checksum_1  -Checksum of File 1"
+                echo "$checksum_2  -Checksum of File 2"
+                echo "Checksums match, yay!"
+                echo "------------------------------"
+            else
+                echo ""
+                echo "------------------------------"
+                echo "$checksum_1  -Checksum of File 1"
+                echo "$checksum_2  -Checksum of File 2"
+                echo "Checksums don't match, boo!" 
+                echo "------------------------------"
+            fi
+            exit;;
+
+        c) #Enter a checksum to compare to the file you provided
+            file1_path=$OPTARG
+            wsl_path=$(wslpath -a $file1_path)
+            checksum_1=$(md5sum $wsl_path | cut -c1-32)
+
+            echo "Enter the MD5 hash you wish to compare this file to: "
+            read -r checksum
+            if [ "$checksum_1" = "$checksum" ]; then
+                echo ""
+                echo "------------------------------"
+                echo "$checksum_1  -Checksum of your file"
+                echo "$checksum  -Checksum provided"
+                echo "Checksums match, yay!"
+                echo "------------------------------"
+            else
+                echo ""
+                echo "------------------------------"
+                echo "$checksum_1  -Checksum of your file"
+                echo "$checksum  -Checksum provided"
+                echo "Checksums don't match, boo!"
+                echo "------------------------------"
+            fi
+            exit;;
+
+        \?) # Invalid option
+            echo "Error: Invalid option"
+            exit;;
+    esac
+done
+
+Help
